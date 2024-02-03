@@ -26,7 +26,7 @@ func NewServer(service services.Service) *gin.Engine {
 	r.GET("/users/:name/favourites", rest.usersFavourites)
 	r.POST("/users/:name/favourites", rest.addUsersFavourites)
 	r.GET("/weather/current", rest.getWeather)
-	r.DELETE("/users/:name/favourites", rest.deleteFavourite)
+	r.DELETE("/users/:name/favourites", rest.deleteUsersFavourite)
 
 	return r
 }
