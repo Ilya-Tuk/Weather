@@ -1,17 +1,17 @@
 package services
 
 import (
-	"strconv"
+	"fmt"
 
 	"github.com/Ilya-Tuk/Weather/internal/models"
 )
 
 type UsersRepository interface {
-	AddUser(int64) bool
-	FindUser(int64) bool
+	AddUser(string) bool
+	FindUser(string) bool
 	Close()
-	SetUsersFavourite(token int64, favs []models.Note) bool
-	GetUsersFavourite(token int64) ([]models.Note, bool)
+	SetUsersFavourite(string, []models.Note) bool
+	GetUsersFavourite(string) ([]models.Note, bool)
 	Init()
 }
 
@@ -26,85 +26,56 @@ func New(repo UsersRepository) Service {
 }
 
 func (serv *Service) CreateNewUser(name string) bool {
-	intname, err := strconv.Atoi(name)
-	if err != nil {
-		return false
-	}
-	token := int64(intname)
-	if serv.repo.FindUser(token) {
+	if serv.repo.FindUser(name) {
+		fmt.Println("found same user")
 		return false
 	}
 
-	return serv.repo.AddUser(token)
+	return serv.repo.AddUser(name)
 }
 
 func (serv *Service) UserExists(name string) bool {
-	intname, err := strconv.Atoi(name)
-	if err != nil {
-		return false
-	}
-	token := int64(intname)
-
-	return serv.repo.FindUser(token)
+	return serv.repo.FindUser(name)
 }
 
 func (serv *Service) GetUsersFavourites(name string) ([]models.Note, bool) {
-	intname, err := strconv.Atoi(name)
-	if err != nil {
-		return []models.Note{}, false
-	}
-	token := int64(intname)
-	return serv.repo.GetUsersFavourite(token)
+	return serv.repo.GetUsersFavourite(name)
 }
 
 func (serv *Service) AddUsersFavourite(name string, fav models.Note) bool {
-	intname, err := strconv.Atoi(name)
-	if err != nil {
+	if !serv.repo.FindUser(name) {
 		return false
 	}
 
-	token := int64(intname)
-
-	if !serv.repo.FindUser(token){
-		return false
-	}
-
-	favs,_:=  serv.repo.GetUsersFavourite(token)
+	favs, _ := serv.repo.GetUsersFavourite(name)
 	favs = append(favs, fav)
 
-	return serv.repo.SetUsersFavourite(token, favs)
+	return serv.repo.SetUsersFavourite(name, favs)
 }
 
 func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
-	intname, err := strconv.Atoi(name)
-	if err != nil {
+	if !serv.repo.FindUser(name) {
 		return false
 	}
 
-	token := int64(intname)
-
-	if !serv.repo.FindUser(token){
-		return false
-	}
-
-	favs,_:=  serv.repo.GetUsersFavourite(token)
+	favs, _ := serv.repo.GetUsersFavourite(name)
 
 	aimFav := -1
 
-	for i,el := range favs{
-		if el.City == city{
+	for i, el := range favs {
+		if el.City == city {
 			aimFav = i
 			break
 		}
 	}
 
-	if aimFav == -1{
+	if aimFav == -1 {
 		return false
 	}
 
 	favs = append(favs[:aimFav], favs[aimFav+1:]...)
 
-	return serv.repo.SetUsersFavourite(token, favs)
+	return serv.repo.SetUsersFavourite(name, favs)
 }
 
 func (serv *Service) Close() {

@@ -10,33 +10,33 @@ import (
 
 type Repository []models.User
 
-func (rep *Repository) AddUser(token int64) bool {
-	*rep = append(*rep, models.User{Token: token, Favourites: []models.Note{}})
+func (rep *Repository) AddUser(name string) bool {
+	*rep = append(*rep, models.User{Name: name, Favourites: []models.Note{}})
 	return true
 }
 
-func (rep *Repository) FindUser(token int64) bool {
+func (rep *Repository) FindUser(name string) bool {
 	for _, el := range *rep {
-		if el.Token == token {
+		if el.Name == name {
 			return true
 		}
 	}
 	return false
 }
 
-func (rep *Repository) GetUsersFavourite(token int64) ([]models.Note, bool) {
+func (rep *Repository) GetUsersFavourite(name string) ([]models.Note, bool) {
 	for _, el := range *rep {
-		if el.Token == token {
+		if el.Name == name {
 			return el.Favourites, true
 		}
 	}
 	return []models.Note{}, false
 }
 
-func (rep *Repository) SetUsersFavourite(token int64, favs []models.Note) bool {
-	for _, el := range *rep {
-		if el.Token == token {
-			el.Favourites = favs
+func (rep *Repository) SetUsersFavourite(name string, favs []models.Note) bool {
+	for i := range *rep {
+		if (*rep)[i].Name == name {
+			(*rep)[i].Favourites = favs
 			return true
 		}
 	}

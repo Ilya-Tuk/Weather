@@ -1,7 +1,7 @@
 package models
 
 type User struct {
-	Token      int64
+	Name       string
 	Favourites []Note
 }
 
