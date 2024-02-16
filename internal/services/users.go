@@ -2,14 +2,18 @@ package services
 
 import (
 	"github.com/Ilya-Tuk/Weather/internal/models"
+	"github.com/gin-gonic/gin"
 )
 
 type UsersRepository interface {
 	AddUser(models.User) bool
-	FindUser(string) bool
+	UserExist(string) bool
 	SetUsersFavourite(string, []string) error
 	GetUsersFavourite(string) ([]string, error)
+	FindUser(string) (models.User, bool)
 }
+
+
 
 type Service struct {
 	repo UsersRepository
@@ -22,7 +26,7 @@ func New(repo UsersRepository) Service {
 }
 
 func (serv *Service) CreateNewUser(name string, password string) bool {
-	if serv.repo.FindUser(name) {
+	if serv.repo.UserExist(name) {
 		return false
 	}
 
@@ -30,6 +34,10 @@ func (serv *Service) CreateNewUser(name string, password string) bool {
 }
 
 func (serv *Service) UserExists(name string) bool {
+	return serv.repo.UserExist(name)
+}
+
+func (serv *Service) FindUser(name string) (models.User,bool) {
 	return serv.repo.FindUser(name)
 }
 
@@ -42,7 +50,7 @@ func (serv *Service) GetUsersFavourites(name string) ([]string, bool) {
 }
 
 func (serv *Service) AddUsersFavourite(name string, fav string) bool {
-	if !serv.repo.FindUser(name) {
+	if !serv.repo.UserExist(name) {
 		return false
 	}
 
@@ -55,7 +63,7 @@ func (serv *Service) AddUsersFavourite(name string, fav string) bool {
 }
 
 func (serv *Service) DeleteUsersFavourite(name string, fav string) bool {
-	if !serv.repo.FindUser(name) {
+	if !serv.repo.UserExist(name) {
 		return false
 	}
 
@@ -80,3 +88,5 @@ func (serv *Service) DeleteUsersFavourite(name string, fav string) bool {
 
 	return err != nil
 }
+
+fu

@@ -10,6 +10,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (s *Rest) auth(ctx *gin.Context) bool {
+	authname := ctx.GetHeader("Auth:name")
+	password := ctx.GetHeader("Auth:password")
+	name := ctx.Param("name")
+
+	if authname != name {
+		return false
+	}
+
+	if !s.service.UserExists(name) {
+		return false
+	}
+
+	user, _ := s.service.FindUser(name)
+
+	if user.Password != password {
+		return false
+	}
+
+	return true
+}
+
 func (s *Rest) createUser(ctx *gin.Context) {
 	var user models.User
 	err := ctx.BindJSON(&user)
@@ -43,6 +65,12 @@ func (s *Rest) usersFavourites(ctx *gin.Context) {
 }
 
 func (s *Rest) addUsersFavourites(ctx *gin.Context) {
+	isauth := s.auth(ctx)
+	if !isauth {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var note string
 	err := ctx.BindJSON(&note)
 
@@ -57,6 +85,12 @@ func (s *Rest) addUsersFavourites(ctx *gin.Context) {
 }
 
 func (s *Rest) deleteUsersFavourite(ctx *gin.Context) {
+	isauth := s.auth(ctx)
+	if !isauth {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var note string
 	err := ctx.BindJSON(&note)
 

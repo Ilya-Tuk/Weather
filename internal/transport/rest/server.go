@@ -34,6 +34,7 @@ func NewServer(cfg config.Config, service services.Service, lg *zap.SugaredLogge
 		lg.Info("http request", ctx.Request.URL.Path)
 	})
 
+
 	r.POST("/users", rest.createUser)
 	r.GET("/users/:name/exists", rest.userExists)
 	r.GET("/users/:name/favourites", rest.usersFavourites)

@@ -18,13 +18,22 @@ func (rep *Repository) AddUser(user models.User) bool {
 	return true
 }
 
-func (rep *Repository) FindUser(name string) bool {
+func (rep *Repository) UserExist(name string) bool {
 	for _, el := range *rep {
 		if el.Name == name {
 			return true
 		}
 	}
 	return false
+}
+
+func (rep *Repository) FindUser(name string) (models.User, bool) {
+	for _, el := range *rep {
+		if el.Name == name {
+			return el, true
+		}
+	}
+	return models.User{Name: "", Password: "", Favourites: []string{}}, false
 }
 
 func (rep *Repository) GetUsersFavourite(name string) ([]string, error) {
