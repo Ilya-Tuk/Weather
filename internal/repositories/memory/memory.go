@@ -10,8 +10,10 @@ import (
 
 type Repository []models.User
 
-func (rep *Repository) AddUser(name string) bool {
-	*rep = append(*rep, models.User{Name: name, Favourites: []models.Note{}})
+var userDoesntExists error
+
+func (rep *Repository) AddUser(user models.User) bool {
+	*rep = append(*rep, user)
 	return true
 }
 
@@ -24,23 +26,23 @@ func (rep *Repository) FindUser(name string) bool {
 	return false
 }
 
-func (rep *Repository) GetUsersFavourite(name string) ([]models.Note, bool) {
+func (rep *Repository) GetUsersFavourite(name string) ([]string, error) {
 	for _, el := range *rep {
 		if el.Name == name {
-			return el.Favourites, true
+			return el.Favourites, nil
 		}
 	}
-	return []models.Note{}, false
+	return []string{}, userDoesntExists
 }
 
-func (rep *Repository) SetUsersFavourite(name string, favs []models.Note) bool {
+func (rep *Repository) SetUsersFavourite(name string, favs []string) error {
 	for i := range *rep {
 		if (*rep)[i].Name == name {
 			(*rep)[i].Favourites = favs
-			return true
+			return nil
 		}
 	}
-	return false
+	return userDoesntExists
 }
 
 func (rep *Repository) Init() {

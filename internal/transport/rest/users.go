@@ -5,141 +5,93 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Ilya-Tuk/Weather/internal/config"
 	"github.com/Ilya-Tuk/Weather/internal/models"
+	"github.com/Ilya-Tuk/Weather/internal/outerApis"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
-var client = resty.New()
-
 func (s *Rest) createUser(ctx *gin.Context) {
-	var name map[string]string
-	err := ctx.BindJSON(&name)
+	var user models.User
+	err := ctx.BindJSON(&user)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	_, ok := name["name"]
+	ok := s.service.CreateNewUser(ctx.GetHeader("Name"), ctx.GetHeader("Password"))
 
-	if !ok {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	ok = s.service.CreateNewUser(name["name"])
-
-	ctx.JSON(http.StatusOK, struct {
-		Status bool
-	}{
-		Status: ok,
-	})
+	ctx.JSON(http.StatusOK, models.StandartRequest{Status: ok})
 }
 
 func (s *Rest) userExists(ctx *gin.Context) {
 	ok := s.service.UserExists(ctx.Param("name"))
 
-	ctx.JSON(http.StatusOK, struct {
-		Status bool
-	}{
-		Status: ok,
-	})
+	ctx.JSON(http.StatusOK, models.StandartRequest{Status: ok})
 }
 
 func (s *Rest) usersFavourites(ctx *gin.Context) {
 	favs, ok := s.service.GetUsersFavourites(ctx.Param("name"))
 
 	ctx.JSON(http.StatusOK, struct {
-		Favourites []models.Note
-		Status     bool
+		Favs   []string
+		Status bool
 	}{
-		Favourites: favs,
-		Status:     ok,
+		Favs:   favs,
+		Status: ok,
 	})
 }
 
 func (s *Rest) addUsersFavourites(ctx *gin.Context) {
-	var note map[string]string
+	var note string
 	err := ctx.BindJSON(&note)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	_, ok := note["City"]
-	if !ok {
-		ctx.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	_, ok = note["Note"]
-	if !ok {
-		ctx.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
 
-	ok = s.service.AddUsersFavourite(ctx.Param("name"), models.Note{City: note["City"], Note: note["Note"]})
+	ok := s.service.AddUsersFavourite(ctx.Param("name"), note)
 
-	ctx.JSON(http.StatusOK, struct {
-		Status bool
-	}{
-		Status: ok,
-	})
+	ctx.JSON(http.StatusOK, models.StandartRequest{Status: ok})
 }
 
 func (s *Rest) deleteUsersFavourite(ctx *gin.Context) {
-	var note map[string]string
+	var note string
 	err := ctx.BindJSON(&note)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	_, ok := note["City"]
-	if !ok {
-		ctx.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
 
-	ok = s.service.DeleteUsersFavourite(ctx.Param("name"), note["City"])
+	ok := s.service.DeleteUsersFavourite(ctx.Param("name"), note)
 
-	ctx.JSON(http.StatusOK, struct {
-		Status bool
-	}{
-		Status: ok,
-	})
+	ctx.JSON(http.StatusOK, models.StandartRequest{Status: ok})
 }
 
 func (s *Rest) getWeather(ctx *gin.Context) {
 	city := ctx.Query("city")
 
-	qC := map[string]string{"key": config.API_KEY, "q": city}
-	qF := map[string]string{"key": config.API_KEY, "q": city, "days": "7"}
+	reqCurr, reqFore := outerApis.GetWeather(ctx, city)
+
+	if reqCurr.IsError() {
+		ctx.AbortWithStatus(400)
+		return
+	}
+
+	if reqFore.IsError() {
+		ctx.AbortWithStatus(400)
+		return
+	}
 
 	respCurr := make(map[string]interface{})
 	respFore := make(map[string]interface{})
 	userCurr := make(map[string]string)
 	userFore := []map[string]string{}
 
-	respCurrent, _ := client.R().
-		SetQueryParams(qC).
-		Get("http://api.weatherapi.com/v1/current.json")
-	if respCurrent.IsError() {
-		ctx.AbortWithStatus(400)
-		return
-	}
-
-	respForecast, _ := client.R().
-		SetQueryParams(qF).
-		Get("http://api.weatherapi.com/v1/forecast.json")
-	if respForecast.IsError() {
-		ctx.AbortWithStatus(400)
-		return
-	}
-
-	json.Unmarshal(respCurrent.Body(), &respCurr)
-	json.Unmarshal(respForecast.Body(), &respFore)
+	json.Unmarshal(reqCurr.Body(), &respCurr)
+	json.Unmarshal(reqFore.Body(), &respFore)
 
 	decodeCurr := []string{"temp_c", "feelslike_c", "wind_kph", "wind_dir", "pressure_mb", "precip_mm", "pressure_mb"}
 

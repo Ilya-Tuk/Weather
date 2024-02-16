@@ -1,18 +1,14 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/Ilya-Tuk/Weather/internal/models"
 )
 
 type UsersRepository interface {
-	AddUser(string) bool
+	AddUser(models.User) bool
 	FindUser(string) bool
-	Close()
-	SetUsersFavourite(string, []models.Note) bool
-	GetUsersFavourite(string) ([]models.Note, bool)
-	Init()
+	SetUsersFavourite(string, []string) error
+	GetUsersFavourite(string) ([]string, error)
 }
 
 type Service struct {
@@ -25,24 +21,27 @@ func New(repo UsersRepository) Service {
 	}
 }
 
-func (serv *Service) CreateNewUser(name string) bool {
+func (serv *Service) CreateNewUser(name string, password string) bool {
 	if serv.repo.FindUser(name) {
-		fmt.Println("found same user")
 		return false
 	}
 
-	return serv.repo.AddUser(name)
+	return serv.repo.AddUser(models.User{Name: name, Password: password, Favourites: []string{}})
 }
 
 func (serv *Service) UserExists(name string) bool {
 	return serv.repo.FindUser(name)
 }
 
-func (serv *Service) GetUsersFavourites(name string) ([]models.Note, bool) {
-	return serv.repo.GetUsersFavourite(name)
+func (serv *Service) GetUsersFavourites(name string) ([]string, bool) {
+	favs, err := serv.repo.GetUsersFavourite(name)
+	if err != nil {
+		return favs, false
+	}
+	return favs, true
 }
 
-func (serv *Service) AddUsersFavourite(name string, fav models.Note) bool {
+func (serv *Service) AddUsersFavourite(name string, fav string) bool {
 	if !serv.repo.FindUser(name) {
 		return false
 	}
@@ -50,10 +49,12 @@ func (serv *Service) AddUsersFavourite(name string, fav models.Note) bool {
 	favs, _ := serv.repo.GetUsersFavourite(name)
 	favs = append(favs, fav)
 
-	return serv.repo.SetUsersFavourite(name, favs)
+	err := serv.repo.SetUsersFavourite(name, favs)
+
+	return err != nil
 }
 
-func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
+func (serv *Service) DeleteUsersFavourite(name string, fav string) bool {
 	if !serv.repo.FindUser(name) {
 		return false
 	}
@@ -63,7 +64,7 @@ func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
 	aimFav := -1
 
 	for i, el := range favs {
-		if el.City == city {
+		if el == fav {
 			aimFav = i
 			break
 		}
@@ -75,13 +76,7 @@ func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
 
 	favs = append(favs[:aimFav], favs[aimFav+1:]...)
 
-	return serv.repo.SetUsersFavourite(name, favs)
-}
+	err := serv.repo.SetUsersFavourite(name, favs)
 
-func (serv *Service) Close() {
-	serv.repo.Close()
-}
-
-func (serv *Service) Init() {
-	serv.repo.Init()
+	return err != nil
 }

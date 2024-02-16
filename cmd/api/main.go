@@ -8,10 +8,10 @@ import (
 
 func main() {
 	repo := &memory.Repository{}
+	repo.Init()
 	service := services.New(repo)
-	service.Init()
 
-	defer service.Close()
+	defer repo.Close()
 
 	rest.NewServer(service).Run(":8080")
 }
