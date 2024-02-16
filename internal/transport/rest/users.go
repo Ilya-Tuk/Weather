@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Ilya-Tuk/Weather/internal/models"
-	"github.com/Ilya-Tuk/Weather/internal/outerApis"
+	"github.com/Ilya-Tuk/Weather/internal/outerapi"
 	"github.com/gin-gonic/gin"
 )
 

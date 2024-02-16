@@ -1,4 +1,4 @@
-package outerApis
+package outerapi
 
 import (
 	"github.com/Ilya-Tuk/Weather/internal/config"
