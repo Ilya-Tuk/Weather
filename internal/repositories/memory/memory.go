@@ -11,6 +11,7 @@ import (
 type Repository []models.User
 
 var userDoesntExists error
+var cfg = config.Read()
 
 func (rep *Repository) AddUser(user models.User) bool {
 	*rep = append(*rep, user)
@@ -46,7 +47,7 @@ func (rep *Repository) SetUsersFavourite(name string, favs []string) error {
 }
 
 func (rep *Repository) Init() {
-	base, _ := os.Open(config.MemoryFileName)
+	base, _ := os.Open(cfg.Db.MemoryFileName)
 	defer base.Close()
 	var buffer []byte
 
@@ -56,7 +57,7 @@ func (rep *Repository) Init() {
 }
 
 func (rep *Repository) Close() {
-	base, _ := os.Open(config.MemoryFileName)
+	base, _ := os.Open(cfg.Db.MemoryFileName)
 	defer base.Close()
 	buffer, _ := json.Marshal(*rep)
 	_, _ = base.Write(buffer)

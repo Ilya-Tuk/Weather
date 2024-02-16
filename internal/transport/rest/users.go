@@ -73,7 +73,7 @@ func (s *Rest) deleteUsersFavourite(ctx *gin.Context) {
 func (s *Rest) getWeather(ctx *gin.Context) {
 	city := ctx.Query("city")
 
-	reqCurr, reqFore := outerApis.GetWeather(ctx, city)
+	reqCurr, reqFore := outerapi.GetWeather(ctx, city)
 
 	if reqCurr.IsError() {
 		ctx.AbortWithStatus(400)
@@ -85,8 +85,8 @@ func (s *Rest) getWeather(ctx *gin.Context) {
 		return
 	}
 
-	respCurr := make(map[string]interface{})
-	respFore := make(map[string]interface{})
+	respCurr := make(models.Intermap)
+	respFore := make(models.Intermap)
 	userCurr := make(map[string]string)
 	userFore := []map[string]string{}
 
@@ -96,7 +96,7 @@ func (s *Rest) getWeather(ctx *gin.Context) {
 	decodeCurr := []string{"temp_c", "feelslike_c", "wind_kph", "wind_dir", "pressure_mb", "precip_mm", "pressure_mb"}
 
 	for _, el := range decodeCurr {
-		var val = respCurr["current"].(map[string]interface{})[el]
+		var val = respCurr["current"].(models.Intermap)[el]
 		switch val.(type) {
 		case int:
 			userCurr[el] = fmt.Sprint(val.(int))
@@ -107,8 +107,8 @@ func (s *Rest) getWeather(ctx *gin.Context) {
 		}
 	}
 
-	for _, el := range respFore["forecast"].(map[string]interface{})["forecastday"].([]interface{}) {
-		dayweath := el.(map[string]interface{})["day"].(map[string]interface{})
+	for _, el := range respFore["forecast"].(models.Intermap)["forecastday"].([]interface{}) {
+		dayweath := el.(models.Intermap)["day"].(models.Intermap)
 		tempmap := make(map[string]string)
 
 		tempmap["avgtemp_c"] = fmt.Sprint(dayweath["avgtemp_c"].(float64))

@@ -8,16 +8,17 @@ import (
 )
 
 var client = resty.New()
+var cfg = config.Read()
 
-func GetWeather(ctx gin.Context, city string) (resty.Request, resty.Request, err) {
+func GetWeather(ctx *gin.Context, city string) (resty.Response, resty.Response) {
 
 	respCurrent, _ := client.R().
-		SetQueryParams(map[string]string{"key": config.API_KEY, "q": city}).
-		Get("http://api.weatherapi.com/v1/current.json")
+		SetQueryParams(map[string]string{"key": cfg.ServCfg.API_KEY, "q": city}).
+		Get(cfg.ServCfg.WeatherApiUrl + "current.json")
 
 	respForecast, _ := client.R().
-		SetQueryParams(map[string]string{"key": config.API_KEY, "q": city, "days": "3"}).
-		Get("http://api.weatherapi.com/v1/forecast.json")
+		SetQueryParams(map[string]string{"key": cfg.ServCfg.API_KEY, "q": city, "days": "3"}).
+		Get(cfg.ServCfg.WeatherApiUrl + "forecast.json")
 
-	return respCurrent, respForecast
+	return *respCurrent, *respForecast
 }
