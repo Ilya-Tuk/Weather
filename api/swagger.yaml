@@ -1,0 +1,89 @@
+openapi: 3.0.1
+info:
+  title: My Weather Service
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+tags:
+- name: users
+- name: Weather
+paths:
+  /users/:name/exists:
+    get:
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: name 
+          schema:
+            type: string
+          required: true
+          description: User name to check existance
+      summary: Проверка существования пользователя
+      operationId: userExists
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /users: 
+    post: 
+      tags:
+        - users
+      summary: Создание нового пользователя
+      operationId: createUser
+      requestBody:
+        description: User to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        "400":
+          description: invalid user input
+
+components:
+  schemas:
+    Status:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: boolean
+          description: Answer on request
+    User:
+      type: object
+      required:
+      - name
+      - password
+      - favourites
+      properties:
+        name:
+          type: string
+          description: Username
+        password:
+          type: string
+          description: Users password
+        favourites:
+          type: array
+          description: Doesnt matter
+        
+
+
+          
+  x-original-swagger-version: "2.0"      
+
+
+
+
