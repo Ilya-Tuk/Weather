@@ -28,6 +28,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Status'
+    
+  /users/:name/favourites:
+    get:
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: name 
+          schema:
+            type: string
+          required: true
+          description: User name to check favourites
+      summary: Проверка фаворитов пользователя
+      operationId: userFavourites
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                -  Favs
+                -  Status
+                properties:
+                  Favs:
+                    type: array
+                    items:
+                      type: string
+                    description: Users favourites
+                  Status:
+                    type: boolean
+                    description: is it even exists...?
+
+
   /users: 
     post: 
       tags:
@@ -41,16 +76,96 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/User'
+      responses:
+          "200":
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Status'
 
+  /weather/current:
+    get:
+      tags:
+        - Weather
+      parameters:
+        - in: query
+          name: city 
+          schema:
+            type: string
+          required: true
+          description: City name to check weather
+      summary: Проверка погоды в городе
+      operationId: getWeather
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Status'
+                $ref: '#/components/schemas/Weather'
         "400":
-          description: invalid user input
+          description: city doesnt exists
+    
+  /users/:name/afavourites: 
+    post: 
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: name 
+          schema:
+            type: string
+          required: true
+          description: User name to add favourite
+      summary: Добавляем фаворитов для пользователя
+      operationId: addUsersFavourites
+      requestBody:
+        description: Favourite to add
+        required: true
+        content:
+          string:
+            schema:
+              description: A city to add 
+      responses:
+          "200":
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Status'
+          "401":
+            description: Unautorized
+
+  /users/:name/dfavourites: 
+    delete: 
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: name 
+          schema:
+            type: string
+          required: true
+          description: User name to delete favourite
+      summary: Добавляем фаворитов для пользователя
+      operationId: deleteUsersFavourite
+      requestBody:
+        description: Favourite to delete
+        required: true
+        content:
+          string:
+            schema:
+              description: A city to delete 
+      responses:
+          "200":
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Status'
+          "401":
+            description: Unautorized
 
 components:
   schemas:
@@ -62,6 +177,7 @@ components:
         status:
           type: boolean
           description: Answer on request
+
     User:
       type: object
       required:
@@ -77,11 +193,40 @@ components:
           description: Users password
         favourites:
           type: array
+          items:
+            type: string
           description: Doesnt matter
-        
 
+    Weather:
+      type: object
+      required:
+      - UserCurr 
+      - UserFore
+      properties:
+        UserCurr:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              code:
+                type: string
+              text:
+                type: string
+          description: Current weather
+        UserFore:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                code:
+                  type: string
+                text:
+                  type: string
+            description: Day's weather
+          description: Weather forecast
 
-          
   x-original-swagger-version: "2.0"      
 
 
