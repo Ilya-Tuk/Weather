@@ -14,6 +14,7 @@ import (
 	"github.com/Ilya-Tuk/Weather/internal/repositories/memory"
 	"github.com/Ilya-Tuk/Weather/internal/services"
 	"github.com/Ilya-Tuk/Weather/internal/transport/rest"
+	"github.com/Ilya-Tuk/Weather/internal/worker"
 	"go.uber.org/zap"
 )
 
@@ -28,14 +29,17 @@ func main() {
 
 	cfg := config.Read()
 
-	repo := &memory.Repository{}
-	repo.Init()
+	repo := memory.New()
 	service := services.New(repo)
 
 	defer repo.Close()
 
+	worker := worker.New(&service, time.Hour*24)
 	server := rest.NewServer(cfg, service, lg)
 	lg.Info("Server started:\n	Host:", cfg.ServCfg.ServerHost, "\n	WeatherApi:", cfg.ServCfg.WeatherApiUrl, "\n	Debug Mode:", cfg.ServCfg.DebugMode)
+
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
 
 	go func() {
 		quit := make(chan os.Signal, 1)
@@ -47,6 +51,8 @@ func main() {
 			log.Panicln("Shutdown error:", err)
 		}
 	}()
+
+	worker.RunNotify(workerCtx)
 
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Panicln(err)

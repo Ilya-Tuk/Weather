@@ -1,7 +1,12 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
+	"time"
+
 	"github.com/Ilya-Tuk/Weather/internal/models"
+	"github.com/Ilya-Tuk/Weather/internal/outerapi"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,10 +15,9 @@ type UsersRepository interface {
 	UserExist(string) bool
 	SetUsersFavourite(string, []string) error
 	GetUsersFavourite(string) ([]string, error)
-	FindUser(string) (models.User, bool)
+	FindUser(string) (models.FullUser, bool)
+	WalkByUsers(func(*models.FullUser))
 }
-
-
 
 type Service struct {
 	repo UsersRepository
@@ -30,14 +34,14 @@ func (serv *Service) CreateNewUser(name string, password string) bool {
 		return false
 	}
 
-	return serv.repo.AddUser(models.User{Name: name, Password: password, Favourites: []string{}})
+	return serv.repo.AddUser(models.User{Name: name, Password: password})
 }
 
 func (serv *Service) UserExists(name string) bool {
 	return serv.repo.UserExist(name)
 }
 
-func (serv *Service) FindUser(name string) (models.User,bool) {
+func (serv *Service) FindUser(name string) (models.FullUser, bool) {
 	return serv.repo.FindUser(name)
 }
 
@@ -89,4 +93,29 @@ func (serv *Service) DeleteUsersFavourite(name string, fav string) bool {
 	return err != nil
 }
 
-fu
+func (serv *Service) SetAlerts(context.Context) {
+	serv.repo.WalkByUsers(func(user *models.FullUser) {
+		user.Alerts = []models.Alert{}
+	})
+
+	serv.repo.WalkByUsers(func(user *models.FullUser) {
+		if len(user.Favourites) == 0 {
+			return
+		}
+		for _, el := range user.Favourites {
+			Current, _ := outerapi.GetWeather(&gin.Context{}, el)
+
+			if Current.IsError() {
+				continue
+			}
+
+			NormalCurrent := make(models.Intermap)
+
+			json.Unmarshal(Current.Body(), &NormalCurrent)
+
+			if NormalCurrent["Current"].(models.Intermap)["precip_mm"].(float64) > 0.5 {
+				user.Alerts = append(user.Alerts, models.Alert{City: el, Date: time.Now()})
+			}
+		}
+	})
+}

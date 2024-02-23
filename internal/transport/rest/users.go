@@ -25,7 +25,7 @@ func (s *Rest) auth(ctx *gin.Context) bool {
 
 	user, _ := s.service.FindUser(name)
 
-	if user.Password != password {
+	if user.User.Password != password {
 		return false
 	}
 

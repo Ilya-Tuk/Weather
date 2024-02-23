@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -18,6 +19,10 @@ type ServerConfig struct {
 
 type DatabaseConfig struct {
 	MemoryFileName string
+}
+
+type WorkerConfig struct {
+	delay time.Duration
 }
 
 func setStringWithDefValue(variable *string, def string, envname string) {
