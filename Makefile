@@ -19,3 +19,17 @@ run-after-build: build
 
 clean:
 	rm $(BIN_NAME)
+
+d-buildrun: 
+	docker-compose up
+
+d-run:
+	docker-compose start
+
+d-stop:
+	docker-compose stop
+
+d-down:
+	docker-compose down
+	
+
