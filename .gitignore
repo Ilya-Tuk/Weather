@@ -24,8 +24,8 @@ db.txt
 
 docker-compose.yaml
 
-Dockerfile.txt
+Dockerfile
 
-dockerignore.txt
+.dockerignore
 
 
