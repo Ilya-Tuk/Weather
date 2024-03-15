@@ -1,18 +1,22 @@
 package services
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/Ilya-Tuk/Weather/internal/models"
+	"github.com/Ilya-Tuk/Weather/internal/outerapi"
+	"github.com/gin-gonic/gin"
 )
 
 type UsersRepository interface {
-	AddUser(string) bool
-	FindUser(string) bool
-	Close()
-	SetUsersFavourite(string, []models.Note) bool
-	GetUsersFavourite(string) ([]models.Note, bool)
-	Init()
+	AddUser(models.User) bool
+	UserExist(string) bool
+	SetUsersFavourite(string, []string) error
+	GetUsersFavourite(string) ([]string, error)
+	FindUser(string) (models.FullUser, bool)
+	WalkByUsers(func(*models.FullUser))
 }
 
 type Service struct {
@@ -25,36 +29,45 @@ func New(repo UsersRepository) Service {
 	}
 }
 
-func (serv *Service) CreateNewUser(name string) bool {
-	if serv.repo.FindUser(name) {
-		fmt.Println("found same user")
+func (serv *Service) CreateNewUser(name string, password string) bool {
+	if serv.repo.UserExist(name) {
 		return false
 	}
 
-	return serv.repo.AddUser(name)
+	return serv.repo.AddUser(models.User{Name: name, Password: password})
 }
 
 func (serv *Service) UserExists(name string) bool {
+	return serv.repo.UserExist(name)
+}
+
+func (serv *Service) FindUser(name string) (models.FullUser, bool) {
 	return serv.repo.FindUser(name)
 }
 
-func (serv *Service) GetUsersFavourites(name string) ([]models.Note, bool) {
-	return serv.repo.GetUsersFavourite(name)
+func (serv *Service) GetUsersFavourites(name string) ([]string, bool) {
+	favs, err := serv.repo.GetUsersFavourite(name)
+	if err != nil {
+		return favs, false
+	}
+	return favs, true
 }
 
-func (serv *Service) AddUsersFavourite(name string, fav models.Note) bool {
-	if !serv.repo.FindUser(name) {
+func (serv *Service) AddUsersFavourite(name string, fav string) bool {
+	if !serv.repo.UserExist(name) {
 		return false
 	}
 
 	favs, _ := serv.repo.GetUsersFavourite(name)
 	favs = append(favs, fav)
 
-	return serv.repo.SetUsersFavourite(name, favs)
+	err := serv.repo.SetUsersFavourite(name, favs)
+
+	return err != nil
 }
 
-func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
-	if !serv.repo.FindUser(name) {
+func (serv *Service) DeleteUsersFavourite(name string, fav string) bool {
+	if !serv.repo.UserExist(name) {
 		return false
 	}
 
@@ -63,7 +76,7 @@ func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
 	aimFav := -1
 
 	for i, el := range favs {
-		if el.City == city {
+		if el == fav {
 			aimFav = i
 			break
 		}
@@ -75,13 +88,34 @@ func (serv *Service) DeleteUsersFavourite(name string, city string) bool {
 
 	favs = append(favs[:aimFav], favs[aimFav+1:]...)
 
-	return serv.repo.SetUsersFavourite(name, favs)
+	err := serv.repo.SetUsersFavourite(name, favs)
+
+	return err != nil
 }
 
-func (serv *Service) Close() {
-	serv.repo.Close()
-}
+func (serv *Service) SetAlerts(context.Context) {
+	serv.repo.WalkByUsers(func(user *models.FullUser) {
+		user.Alerts = []models.Alert{}
+	})
 
-func (serv *Service) Init() {
-	serv.repo.Init()
+	serv.repo.WalkByUsers(func(user *models.FullUser) {
+		if len(user.Favourites) == 0 {
+			return
+		}
+		for _, el := range user.Favourites {
+			Current, _ := outerapi.GetWeather(&gin.Context{}, el)
+
+			if Current.IsError() {
+				continue
+			}
+
+			NormalCurrent := make(models.Intermap)
+
+			json.Unmarshal(Current.Body(), &NormalCurrent)
+
+			if NormalCurrent["Current"].(models.Intermap)["precip_mm"].(float64) > 0.5 {
+				user.Alerts = append(user.Alerts, models.Alert{City: el, Date: time.Now()})
+			}
+		}
+	})
 }

@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+db.txt
+
+docker-compose.yaml
+
+Dockerfile
+
+.dockerignore
+
+

@@ -1,11 +1,19 @@
 package models
 
+import "time"
+
 type User struct {
-	Name       string
-	Favourites []Note
+	Name     string `json:"Name"`
+	Password string `json:"Password"`
 }
 
-type Note struct {
+type FullUser struct {
+	User       User
+	Favourites []string
+	Alerts     []Alert
+}
+
+type Alert struct {
 	City string
-	Note string
+	Date time.Time
 }
